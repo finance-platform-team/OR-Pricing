@@ -1,0 +1,1185 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OR Pricing Module</title>
+  </head>
+<body>
+<div class="app">
+
+<!-- ══ TOPBAR ══ -->
+<header class="topbar">
+  <div class="logo-mark">
+    <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+  </div>
+  <div class="topbar-info">
+    <div class="topbar-title">OR Pricing Module</div>
+  </div>
+  <div class="topbar-right">
+    <span class="status-pill" id="globalStatus" style="display:none;">Draft</span>
+    <div class="user-chip">
+      <div class="user-av" id="userAv">U</div>
+      <span id="userName">Loading...</span>
+    </div>
+  </div>
+</header>
+
+<!-- ══ LIST VIEW ══ -->
+<div id="listView">
+  <main class="main" style="padding-bottom:40px;">
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <div>
+        <div class="page-title">Pricing <span>Requests</span></div>
+        <div class="page-meta" id="listPageMeta">All Requests · <span id="listCurrentDate"></span></div>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-ghost" data-onclick="openComplianceDashboard()">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          Compliance Dashboard
+        </button>
+        <button class="btn btn-brand" data-onclick="openNewForm()">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New Request
+        </button>
+      </div>
+    </div>
+
+    <!-- Stats Bar -->
+    <div class="list-stats" id="listStats">
+      <div class="stat-chip">
+        <span class="stat-dot" style="background:var(--text3);"></span>
+        <span class="stat-num" id="statTotal">0</span>
+        <span class="stat-lbl">Total</span>
+      </div>
+      <div class="stat-chip">
+        <span class="stat-dot" style="background:var(--amber);"></span>
+        <span class="stat-num" id="statPending">0</span>
+        <span class="stat-lbl">Supply Chain</span>
+      </div>
+      <div class="stat-chip">
+        <span class="stat-dot" style="background:var(--blue);"></span>
+        <span class="stat-num" id="statBilling">0</span>
+        <span class="stat-lbl">Billing</span>
+      </div>
+      <div class="stat-chip">
+        <span class="stat-dot" style="background:var(--green);"></span>
+        <span class="stat-num" id="statApproved">0</span>
+        <span class="stat-lbl">Approved</span>
+      </div>
+      <div class="stat-chip">
+        <span class="stat-dot" style="background:var(--red);"></span>
+        <span class="stat-num" id="statRejected">0</span>
+        <span class="stat-lbl">Rejected</span>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="list-toolbar">
+      <div class="list-search-wrap">
+        <svg class="list-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input type="text" class="list-search-input" id="listSearchInput"
+          placeholder="Search by Request ID, Patient, Operation..."
+          data-oninput="filterList()">
+      </div>
+      <select class="list-filter-select" id="listHospitalFilter" data-onchange="filterList()">
+        <option value="">All Hospitals</option>
+        <option value="129990000">SMH</option>
+        <option value="129990001">AMH</option>
+        <option value="129990002">ASH</option>
+      </select>
+      <select class="list-filter-select" id="listStatusFilter" data-onchange="filterList()">
+        <option value="">All Statuses</option>
+        <option value="129990001">Pending Supply Chain</option>
+        <option value="129990002">Pending Billing</option>
+        <option value="129990003">Pending Approval</option>
+        <option value="129990004">Approved</option>
+        <option value="129990005">Rejected</option>
+        <option value="129990006">Pending OR Info</option>
+      </select>
+      <button class="btn btn-ghost btn-sm" data-onclick="loadListData()" title="Refresh" style="height:38px;padding:0 12px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        <span class="btn-label">Refresh</span>
+      </button>
+    </div>
+
+    <!-- Table -->
+    <div class="list-table-wrap">
+      <div id="listLoading" class="list-loading">
+        <div class="list-loading-spinner"></div>
+        Loading requests...
+      </div>
+      <div id="listEmpty" class="list-empty" style="display:none;">
+        <div class="list-empty-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="2" width="6" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+          </svg>
+        </div>
+        <div class="list-empty-title">No requests found</div>
+        <div class="list-empty-sub">Try adjusting your search or filters, or create a new request.</div>
+      </div>
+      <table class="list-table" id="listTable" style="display:none;">
+        <colgroup>
+          <col><col><col><col><col><col><col><col>
+        </colgroup>
+        <thead>
+          <tr>
+            <th data-onclick="sortList('requestName')" id="th-reqid">Request ID</th>
+            <th data-onclick="sortList('patientName')" id="th-patient">Patient Name</th>
+            <th data-onclick="sortList('operation')" id="th-op">Operation</th>
+            <th id="th-procs">Proc 1 / 2 / 3</th>
+            <th data-onclick="sortList('classification')" id="th-class">Classification</th>
+            <th data-onclick="sortList('consumables')" id="th-cons">Consumables</th>
+            <th data-onclick="sortList('status')" id="th-status">Status</th>
+            <th data-onclick="sortList('createdon')" id="th-date">Created</th>
+          </tr>
+        </thead>
+        <tbody id="listTableBody"></tbody>
+      </table>
+    </div>
+
+  </main>
+</div>
+
+<!-- ══ COMPLIANCE DASHBOARD VIEW ══ -->
+<div id="complianceView" style="display:none;">
+  <main class="main" style="padding-bottom:40px;">
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <div>
+        <div class="page-title">Compliance <span>Dashboard</span></div>
+        <div class="page-meta">Request-level audit trail analytics — cycle time, SLA &amp; return-loop compliance</div>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-ghost" data-onclick="loadComplianceData()" id="btnComplianceRefresh">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          <span class="btn-label">Refresh</span>
+        </button>
+        <button class="btn btn-success" data-onclick="exportComplianceCSV()" id="btnComplianceExport">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export Excel
+        </button>
+        <button class="btn btn-ghost" data-onclick="closeComplianceDashboard()">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          Back to List
+        </button>
+      </div>
+    </div>
+
+    <!-- Date Filter -->
+    <div class="dash-filter-bar">
+      <div class="dash-filter-field">
+        <label for="compDateFrom">From</label>
+        <input type="date" id="compDateFrom" data-onchange="loadComplianceData()">
+      </div>
+      <div class="dash-filter-field">
+        <label for="compDateTo">To</label>
+        <input type="date" id="compDateTo" data-onchange="loadComplianceData()">
+      </div>
+      <button class="btn btn-ghost btn-sm" data-onclick="clearComplianceDateFilter()" style="height:38px;">Clear</button>
+      <span class="dash-filter-hint" id="compFilterHint"></span>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="kpi-grid" id="complianceKpiGrid">
+      <div class="kpi-card"><div class="kpi-skeleton"></div></div>
+      <div class="kpi-card"><div class="kpi-skeleton"></div></div>
+      <div class="kpi-card"><div class="kpi-skeleton"></div></div>
+      <div class="kpi-card"><div class="kpi-skeleton"></div></div>
+      <div class="kpi-card"><div class="kpi-skeleton"></div></div>
+      <div class="kpi-card"><div class="kpi-skeleton"></div></div>
+    </div>
+
+    <!-- Status Distribution + Stage Averages -->
+    <div class="comp-panels-grid">
+      <div class="comp-panel">
+        <div class="comp-panel-title">Status Distribution</div>
+        <div id="complianceStatusBars"><div class="comp-loading">Loading…</div></div>
+      </div>
+      <div class="comp-panel">
+        <div class="comp-panel-title">Average Time per Stage <span style="font-weight:400;opacity:.65;">(audit trail — return loops aggregated)</span></div>
+        <div id="complianceStageAvgs"><div class="comp-loading">Loading…</div></div>
+      </div>
+    </div>
+
+    <!-- Detailed Compliance Table -->
+    <div class="section-label" style="margin-top:8px;">Request-Level Compliance Detail</div>
+    <div class="list-table-wrap" style="margin-top:10px;">
+      <table class="list-table" style="table-layout:auto;">
+        <thead>
+          <tr>
+            <th>Request</th>
+            <th>Hospital</th>
+            <th>Created</th>
+            <th>Status</th>
+            <th style="text-align:right;">Supply Chain</th>
+            <th style="text-align:right;">OR Reply</th>
+            <th style="text-align:right;">Billing/Approval</th>
+            <th style="text-align:center;">Loops</th>
+            <th style="text-align:right;">Total Cycle</th>
+          </tr>
+        </thead>
+        <tbody id="complianceTableBody">
+          <tr><td colspan="9" style="padding:24px;text-align:center;color:var(--text3);">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </main>
+</div>
+
+<!-- ══ FORM VIEW ══ -->
+<div id="formView">
+
+<!-- Back to List -->
+<div style="padding:12px 24px 0;max-width:1080px;margin:0 auto;">
+  <button class="back-btn" data-onclick="goBackToList()">
+    <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+    Back to List
+  </button>
+</div>
+
+<!-- ══ MAIN ══ -->
+<main class="main">
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div>
+      <div class="page-title">Operation <span>Pricing Request</span></div>
+      <div class="page-meta" id="pageMeta">New Request · <span id="currentDate"></span></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button id="auditTrailBtn" class="btn btn-ghost btn-sm" style="display:none;" data-onclick="openAuditTrailModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Audit Trail
+      </button>
+      <button id="viewOrReplyBtn" class="btn btn-success btn-sm" style="display:none;" data-onclick="openOrReplyModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        View OR Coordinator's Reply
+      </button>
+      <button id="scQueryPendingBtn" class="btn btn-danger btn-sm" style="display:none;" data-onclick="openScQueryModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        Supply Chain Needs Info — Reply
+      </button>
+      <div class="req-badge" id="reqId">REQ-NEW</div>
+    </div>
+  </div>
+
+  <!-- Supply Chain Query Popup — OR replies here -->
+  <div id="scQueryModalOverlay" class="reply-modal-overlay" style="display:none;" data-onclick="closeScQueryModal(event)">
+    <div class="reply-modal" data-onclick="event.stopPropagation()">
+      <div class="reply-modal-icon" style="background:var(--red-bg);">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="stroke:var(--red);"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+      </div>
+      <div class="reply-modal-title">Supply Chain Needs More Info</div>
+      <div class="reply-modal-sub">Reply below to send this request back to Supply Chain.</div>
+      <div class="reply-modal-body">
+        <div class="reply-modal-block">
+          <div class="reply-modal-block-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            Their Question
+          </div>
+          <div class="reply-modal-block-text" id="scQueryText">—</div>
+        </div>
+        <div class="reply-modal-meta" id="scQueryMeta"></div>
+        <div class="field" id="fieldOrReply" style="margin-top:2px;">
+          <label>Your Reply <span class="req">*</span></label>
+          <textarea id="fOrReplyComment" placeholder="Provide the missing info or clarification..." maxlength="500"></textarea>
+          <span class="validation-msg">Please enter a reply.</span>
+        </div>
+      </div>
+      <div class="reply-modal-footer" style="display:flex;gap:8px;">
+        <button class="btn btn-ghost" style="flex:0 0 auto;" data-onclick="closeScQueryModal()">Cancel</button>
+        <button data-onclick="confirmOrReply()" style="background:linear-gradient(135deg,#E84B4B,var(--red));box-shadow:0 4px 14px rgba(214,59,59,.28);">
+          Reply &amp; Return to Supply Chain
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Audit Trail Popup — Timeline بتاع كل تغيير حالة للطلب -->
+  <div id="auditTrailModalOverlay" class="reply-modal-overlay" style="display:none;" data-onclick="closeAuditTrailModal(event)">
+    <div class="audit-modal" data-onclick="event.stopPropagation()">
+      <div class="audit-modal-header">
+        <div class="audit-modal-header-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <div>
+          <div class="audit-modal-title">Request Audit Trail</div>
+          <div class="audit-modal-sub">Full stage-by-stage timeline, including any Supply Chain ⇄ OR round trips.</div>
+        </div>
+        <button class="audit-modal-close" data-onclick="closeAuditTrailModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="audit-totals" id="auditTotalsRow"></div>
+      <div class="audit-timeline" id="auditTimelineBody">
+        <div style="text-align:center;color:var(--text3);font-size:12.5px;padding:20px;">Loading…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABS NAV -->
+  <div class="tabs-nav" id="tabsNav">
+    <button class="tab-btn active" id="tabBtn1" data-onclick="goTab(1)">
+      <!-- clipboard icon -->
+      <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="9" y="2" width="6" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+        <path d="M12 11h4M12 16h4M8 11h.01M8 16h.01"/>
+      </svg>
+      <span class="tab-num">01</span>
+      <span class="tab-label">Request & Procedures</span>
+    </button>
+    <button class="tab-btn locked hidden" id="tabBtn2" data-onclick="goTab(2)">
+      <!-- package icon -->
+      <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+        <polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>
+      </svg>
+      <span class="tab-num">02</span>
+      <span class="tab-label">Supply Chain</span>
+    </button>
+    <button class="tab-btn locked" id="tabBtn3" data-onclick="goTab(3)">
+      <!-- file-text / billing review icon -->
+      <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+        <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+      </svg>
+      <span class="tab-num">03</span>
+      <span class="tab-label">Billing Review</span>
+    </button>
+    <button class="tab-btn locked" id="tabBtn4" data-onclick="goTab(4)">
+      <!-- calculator icon -->
+      <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/>
+        <line x1="8" y1="10" x2="10" y2="10"/><line x1="14" y1="10" x2="16" y2="10"/>
+        <line x1="8" y1="14" x2="10" y2="14"/><line x1="14" y1="14" x2="16" y2="14"/>
+        <line x1="8" y1="18" x2="16" y2="18"/>
+      </svg>
+      <span class="tab-num">04</span>
+      <span class="tab-label">Cost & Pricing</span>
+    </button>
+    <button class="tab-btn locked" id="tabBtn5" data-onclick="goTab(5)">
+      <!-- check-circle icon -->
+      <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+      </svg>
+      <span class="tab-num">05</span>
+      <span class="tab-label">Approval</span>
+    </button>
+  </div>
+
+  <!-- TABS BODY -->
+  <div class="tabs-body">
+
+    <!-- ════════════════════════════════
+         TAB 1 — Request & Procedures
+    ════════════════════════════════ -->
+    <div class="tab-panel active" id="tabPanel1">
+
+      <!-- Audit Banner -->
+      <div id="auditBanner1" style="display:none;"></div>
+
+      <!-- ═══ PATIENT INFORMATION ═══ -->
+      <div class="section-label">Patient Information</div>
+      <div class="form-grid">
+        <div class="field" id="fieldPatient">
+          <label>Patient <span class="req">*</span></label>
+          <div class="patient-search-wrap" id="patientSearchWrap">
+            <div class="patient-search-input-row">
+              <svg class="patient-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input type="text" id="patientSearchInput" class="patient-search-field"
+                placeholder="Search by name or patient ID..."
+                autocomplete="off"
+                data-oninput="onPatientSearch(this.value)"
+                data-onfocus="showPatientDropdown()">
+              <button class="patient-clear-btn" id="patientClearBtn" data-onclick="clearPatient()" style="display:none;" title="Clear">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            <div class="patient-dropdown" id="patientDropdown" style="display:none;"></div>
+          </div>
+          <input type="hidden" id="fPatient" value="">
+          <span class="validation-msg">Please select a patient.</span>
+        </div>
+        <div class="field" id="fieldHospital">
+          <label>Hospital <span class="req">*</span></label>
+          <select id="fHospital" data-onchange="onHospitalChange()">
+            <option value="">— Select Hospital —</option>
+            <option value="129990000" data-label="SMH">SMH</option>
+            <option value="129990001" data-label="AMH">AMH</option>
+            <option value="129990002" data-label="ASH">ASH</option>
+          </select>
+          <span class="validation-msg">Please select a hospital.</span>
+        </div>
+      </div>
+
+      <!-- Patient Info Card -->
+      <div id="patientInfoCard" class="patient-info-card" style="display:none;">
+        <div class="patient-info-item">
+          <div class="patient-info-label">Full Name</div>
+          <div class="patient-info-value" id="fPatientName">—</div>
+        </div>
+        <div class="patient-info-item">
+          <div class="patient-info-label">Patient Code</div>
+          <div class="patient-info-value" id="fPatientCode">—</div>
+        </div>
+        <div class="patient-info-item">
+          <div class="patient-info-label">Business Unit</div>
+          <div class="patient-info-value" id="fPatientBU">—</div>
+        </div>
+        <div class="patient-info-item">
+          <div class="patient-info-label">Age</div>
+          <div class="patient-info-value" id="fPatientAge">—</div>
+        </div>
+        <div class="patient-info-item">
+          <div class="patient-info-label">Gender</div>
+          <div class="patient-info-value" id="fPatientGender">—</div>
+        </div>
+        <div class="patient-info-item" style="grid-column:1/-1;">
+          <div class="patient-info-label">Address</div>
+          <div class="patient-info-value" id="fPatientAddress">—</div>
+        </div>
+      </div>
+
+      <!-- Contract under Patient -->
+      <div class="form-grid" style="margin-top:14px;">
+        <div class="field" id="fieldContract">
+          <label>Contract <span class="req">*</span></label>
+          <div class="patient-search-wrap" id="contractSearchWrap">
+            <div class="patient-search-input-row" id="contractSearchRow">
+              <svg class="patient-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input type="text" id="contractSearchInput" class="patient-search-field"
+                placeholder="Select a hospital first..."
+                autocomplete="off"
+                disabled
+                data-oninput="onContractSearch(this.value)"
+                data-onfocus="showContractDropdown()">
+              <button class="patient-clear-btn" id="contractClearBtn" data-onclick="clearContract()" style="display:none;" title="Clear">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            <div class="patient-dropdown" id="contractDropdown" style="display:none;"></div>
+          </div>
+          <input type="hidden" id="fContract" value="">
+          <span class="validation-msg">Please select a contract.</span>
+        </div>
+        <div class="field" id="fieldSpecialty">
+          <label>Specialty <span class="req">*</span></label>
+          <div class="sdrop-wrap" id="specialtyWrap">
+            <div class="sdrop-input-row">
+              <svg class="sdrop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" class="sdrop-field" id="specialtySearch" placeholder="Select a hospital first..." autocomplete="off"
+                disabled
+                data-oninput="onSDropSearch('specialty')" data-onfocus="onSDropFocus('specialty')">
+              <button class="sdrop-clear" id="specialtyClear" data-onclick="clearSDropField('specialty')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            <div class="sdrop-dropdown" id="specialtyDropdown"></div>
+          </div>
+          <input type="hidden" id="fSpecialty" value="">
+          <span class="validation-msg">Please select a specialty.</span>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- ═══ OPERATION & PROCEDURES ═══ -->
+      <div class="section-label">Operation & Procedures</div>
+
+      <!-- Main Operation Name — full width -->
+      <div class="field form-full" id="fieldMainOp" style="margin-bottom:14px;">
+        <label>Main Operation Name <span class="req">*</span></label>
+        <input type="text" id="fMainOp" placeholder="e.g. Laparoscopic Cholecystectomy" maxlength="250"
+          data-oninput="updateCharCounter('fMainOp','ctrMainOp',250)">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span class="validation-msg">Please enter the main operation name.</span>
+          <span class="char-counter" id="ctrMainOp">0 / 250</span>
+        </div>
+      </div>
+
+      <!-- Procedure 1 | Procedure 2 | Procedure 3 — 3 columns -->
+      <div class="procedure-grid" style="margin-bottom:14px;">
+        <div class="proc-card" id="procCard1">
+          <div class="proc-card-label">Procedure 1 <span class="req">*</span>
+            <span id="procBadge1" style="display:none;"></span></div>
+          <div class="field" id="fieldProc1">
+            <div class="sdrop-wrap" id="proc1Wrap">
+              <div class="sdrop-input-row">
+                <svg class="sdrop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" class="sdrop-field" id="proc1Search" placeholder="Search procedure..." autocomplete="off"
+                  data-oninput="onSDropSearch('proc1')" data-onfocus="onSDropFocus('proc1')">
+                <button class="sdrop-clear" id="proc1Clear" data-onclick="clearSDropField('proc1')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+              </div>
+              <div class="sdrop-dropdown" id="proc1Dropdown"></div>
+            </div>
+            <input type="hidden" id="fProc1" value="">
+            <span class="validation-msg">Procedure 1 is required.</span>
+          </div>
+          <div id="procClass1" class="proc-classtype" style="display:none;"></div>
+        </div>
+        <div class="proc-card" id="procCard2">
+          <div class="proc-card-label">Procedure 2 <span class="opt">optional</span>
+            <span id="procBadge2" style="display:none;"></span></div>
+          <div class="sdrop-wrap" id="proc2Wrap">
+            <div class="sdrop-input-row">
+              <svg class="sdrop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" class="sdrop-field" id="proc2Search" placeholder="Search procedure..." autocomplete="off"
+                data-oninput="onSDropSearch('proc2')" data-onfocus="onSDropFocus('proc2')">
+              <button class="sdrop-clear" id="proc2Clear" data-onclick="clearSDropField('proc2')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            <div class="sdrop-dropdown" id="proc2Dropdown"></div>
+          </div>
+          <input type="hidden" id="fProc2" value="">
+          <div id="procClass2" class="proc-classtype" style="display:none;"></div>
+        </div>
+        <div class="proc-card" id="procCard3">
+          <div class="proc-card-label">Procedure 3 <span class="opt">optional</span>
+            <span id="procBadge3" style="display:none;"></span></div>
+          <div class="sdrop-wrap" id="proc3Wrap">
+            <div class="sdrop-input-row">
+              <svg class="sdrop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" class="sdrop-field" id="proc3Search" placeholder="Search procedure..." autocomplete="off"
+                data-oninput="onSDropSearch('proc3')" data-onfocus="onSDropFocus('proc3')">
+              <button class="sdrop-clear" id="proc3Clear" data-onclick="clearSDropField('proc3')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            <div class="sdrop-dropdown" id="proc3Dropdown"></div>
+          </div>
+          <input type="hidden" id="fProc3" value="">
+          <div id="procClass3" class="proc-classtype" style="display:none;"></div>
+        </div>
+      </div>
+
+      <!-- Primary Alert -->
+      <div id="primaryAlert" class="alert alert-info" style="display:none;margin-bottom:14px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span id="primaryAlertText"></span>
+      </div>
+
+      <!-- Accommodation Type | No. of Days -->
+      <div class="form-grid" style="margin-bottom:14px;">
+        <div class="field" id="fieldAccomType">
+          <label>Accommodation Type <span class="req">*</span></label>
+          <select id="fAccomType">
+            <option value="">— Select Type —</option>
+          </select>
+          <span class="validation-msg">Please select accommodation type.</span>
+        </div>
+        <div class="field">
+          <label>No. of Days <span class="opt">(optional)</span></label>
+          <input type="number" id="fAccomDays" min="0" max="365" placeholder="0">
+        </div>
+      </div>
+
+      <!-- Extra Doctor Fee -->
+      <div class="form-grid">
+        <div class="field">
+          <label>Extra Doctor Fee (EGP) <span class="opt">(optional)</span></label>
+          <input type="number" id="fDoctorFee" min="0" step="any" placeholder="0.00">
+        </div>
+        <div></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- ═══ EXTERNAL CONSUMABLES ═══ -->
+      <div class="section-label">External Consumables</div>
+      <div class="toggle-row">
+        <label class="toggle">
+          <input type="checkbox" id="fExtConsumables" data-onchange="onConsumablesToggle()">
+          <span class="toggle-slider"></span>
+        </label>
+        <span class="toggle-label">External Consumables Required</span>
+      </div>
+      <div id="consumablesDescBox" style="display:none;margin-top:10px;">
+        <div class="field" id="fieldConsumablesDesc">
+          <label>Consumables Description <span class="req">*</span></label>
+          <textarea id="fConsumablesDesc" placeholder="Describe required external consumables..." maxlength="1000"
+            data-oninput="updateCharCounter('fConsumablesDesc','ctrConsDesc',1000)"></textarea>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span class="validation-msg">Please describe the required consumables.</span>
+            <span class="char-counter" id="ctrConsDesc">0 / 1000</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- ═══ ATTACHMENTS ═══ -->
+      <div class="section-label">Attachments</div>
+      <div class="form-grid">
+        <div class="field" id="fieldInsurance">
+          <label>Insurance Card <span style="font-size:11px;color:var(--text3);font-weight:400;">(Optional)</span></label>
+          <div id="insuranceFileStatus" style="display:none;align-items:center;gap:8px;padding:8px 12px;background:var(--green-bg);border:1px solid var(--green-bdr);border-radius:var(--radius);margin-bottom:6px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;stroke:var(--green);flex-shrink:0;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <span id="insuranceFileName" style="font-size:12px;color:var(--green);font-weight:500;">File uploaded</span>
+            <button data-onclick="previewFile('oprx_insurancecard','Insurance Card')" class="btn-unlock-exempt" style="margin-left:auto;display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:5px;border:1px solid var(--green-bdr);background:var(--surface);color:var(--green);font-size:11px;font-weight:500;cursor:pointer;">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;stroke:var(--green);"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              Preview
+            </button>
+            <span style="font-size:11px;color:var(--text3);">Replace:</span>
+          </div>
+          <input type="file" id="fInsuranceCard" accept=".pdf,.jpg,.png,.jpeg" style="padding:7px;"
+            data-onchange="validateFileSize(this,'fieldInsurance')">
+          <span class="validation-msg" id="insuranceValidMsg">Please upload the insurance card.</span>
+        </div>
+        <div class="field" id="fieldReferral">
+          <label>OR Referral Request <span style="font-size:11px;color:var(--text3);font-weight:400;">(Optional)</span></label>
+          <div id="referralFileStatus" style="display:none;align-items:center;gap:8px;padding:8px 12px;background:var(--green-bg);border:1px solid var(--green-bdr);border-radius:var(--radius);margin-bottom:6px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;stroke:var(--green);flex-shrink:0;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <span id="referralFileName" style="font-size:12px;color:var(--green);font-weight:500;">File uploaded</span>
+            <button data-onclick="previewFile('oprx_orreferral','OR Referral')" class="btn-unlock-exempt" style="margin-left:auto;display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:5px;border:1px solid var(--green-bdr);background:var(--surface);color:var(--green);font-size:11px;font-weight:500;cursor:pointer;">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;stroke:var(--green);"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              Preview
+            </button>
+            <span style="font-size:11px;color:var(--text3);">Replace:</span>
+          </div>
+          <input type="file" id="fReferral" accept=".pdf,.jpg,.png,.jpeg" style="padding:7px;"
+            data-onchange="validateFileSize(this,'fieldReferral')">
+          <span class="validation-msg" id="referralValidMsg">Please upload the OR referral.</span>
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;margin-top:20px;">
+        <button class="btn btn-brand" data-onclick="completeTab1()">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          Next: <span id="tab1NextLabel">Billing Review</span>
+        </button>
+      </div>
+    </div>
+
+        <!-- ════════════════════════════════
+         TAB 2 — Supply Chain
+    ════════════════════════════════ -->
+    <div class="tab-panel" id="tabPanel2">
+      <!-- Audit Banner -->
+      <div id="auditBanner2" style="display:none;"></div>
+
+      <!-- OR Reply Popup — يظهر لو في رد سابق من الـ OR على سؤال Supply Chain -->
+      <div id="orReplyModalOverlay" class="reply-modal-overlay" style="display:none;" data-onclick="closeOrReplyModal(event)">
+        <div class="reply-modal" data-onclick="event.stopPropagation()">
+          <div class="reply-modal-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </div>
+          <div class="reply-modal-title">OR Coordinator Replied</div>
+          <div class="reply-modal-sub">Your query on this request has been answered.</div>
+          <div class="reply-modal-body">
+            <div class="reply-modal-block">
+              <div class="reply-modal-block-label">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                Your Question
+              </div>
+              <div class="reply-modal-block-text" id="orReplyQueryText">—</div>
+            </div>
+            <div class="reply-modal-block is-answer">
+              <div class="reply-modal-block-label">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                Their Reply
+              </div>
+              <div class="reply-modal-block-text" id="orReplyText">—</div>
+            </div>
+            <div class="reply-modal-meta" id="orReplyMeta"></div>
+          </div>
+          <div class="reply-modal-footer single-btn">
+            <button data-onclick="closeOrReplyModal()">Got it</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="alert alert-info">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span>Enter external consumables pricing below. A <strong>+20% markup</strong> is applied automatically to each item.</span>
+      </div>
+
+      <!-- Consumables Description — readonly من الـ Coordinator -->
+      <div id="scDescBox" style="display:none;margin-bottom:16px;">
+        <div style="background:var(--brand-light);border:1px solid rgba(165,116,77,.15);border-radius:var(--radius);padding:14px 16px;">
+          <div style="font-size:10px;font-weight:700;color:var(--brand-dark);letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px;display:flex;align-items:center;gap:6px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;stroke:var(--brand-dark);"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Consumables Description (from Coordinator)
+          </div>
+          <div id="scDescText" style="font-size:13px;color:var(--text);line-height:1.6;">—</div>
+        </div>
+      </div>
+
+      <div class="section-label">Consumables Items</div>
+      <div class="consumables-list" id="consumablesList"></div>
+
+      <button class="btn btn-outline-brand btn-sm" data-onclick="addConsumableItem()" style="margin-bottom:20px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Item
+      </button>
+
+      <div class="sc-total-row">
+        <span class="sc-total-label">Total Consumables (incl. 20% markup)</span>
+        <span class="sc-total-val" id="scTotalVal">EGP 0.00</span>
+      </div>
+
+      <div class="divider"></div>
+      <div style="display:flex;justify-content:space-between;margin-top:8px;">
+        <button class="btn btn-ghost" data-onclick="goTab(1)">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          Back
+        </button>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-danger" data-onclick="openScAskModal()">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            Missing Info — Ask OR
+          </button>
+          <button class="btn btn-brand" data-onclick="completeTab2()">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            Next: Billing Review
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Missing Info Popup — Supply Chain asks the OR Coordinator -->
+    <div id="scAskModalOverlay" class="reply-modal-overlay" style="display:none;" data-onclick="closeScAskModal(event)">
+      <div class="reply-modal" data-onclick="event.stopPropagation()">
+        <div class="reply-modal-icon" style="background:var(--red-bg);">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="stroke:var(--red);"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        </div>
+        <div class="reply-modal-title">Ask OR Coordinator</div>
+        <div class="reply-modal-sub">This sends the request back to OR. It returns to Supply Chain automatically once they reply.</div>
+        <div class="reply-modal-body">
+          <div class="field" id="fieldScQuery" style="margin-top:2px;">
+            <label>What info is missing? <span class="req">*</span></label>
+            <textarea id="fScQueryComment" placeholder="Explain what's missing or needs clarification..." maxlength="500"></textarea>
+            <span class="validation-msg">Please describe what's missing.</span>
+          </div>
+        </div>
+        <div class="reply-modal-footer" style="display:flex;gap:8px;">
+          <button class="btn btn-ghost" style="flex:0 0 auto;" data-onclick="closeScAskModal()">Cancel</button>
+          <button data-onclick="confirmScQuery()" style="background:linear-gradient(135deg,#E84B4B,var(--red));box-shadow:0 4px 14px rgba(214,59,59,.28);">
+            Send to OR
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════
+         TAB 3 — Billing Review
+    ════════════════════════════════ -->
+    <div class="tab-panel" id="tabPanel3">
+
+      <!-- Audit Banner -->
+      <div id="auditBanner3" style="display:none;"></div>
+
+      <!-- ═══ PROCEDURE STRUCTURE & CLASSIFICATION ═══ -->
+      <div class="section-label">Procedure Structure &amp; Classification</div>
+      <div style="overflow-x:auto;margin-bottom:22px;">
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead>
+            <tr style="background:var(--surface2);border-bottom:2px solid var(--border2);">
+              <th style="padding:10px 14px;text-align:left;font-weight:700;color:var(--text2);font-size:11px;letter-spacing:.06em;text-transform:uppercase;">Procedure</th>
+              <th style="padding:10px 14px;text-align:left;font-weight:700;color:var(--text2);font-size:11px;letter-spacing:.06em;text-transform:uppercase;">Auto Classification</th>
+              <th style="padding:10px 14px;text-align:left;font-weight:700;color:var(--text2);font-size:11px;letter-spacing:.06em;text-transform:uppercase;">Role</th>
+            </tr>
+          </thead>
+          <tbody id="billingProcTable">
+            <tr><td colspan="3" style="padding:18px 14px;color:var(--text3);font-size:12px;text-align:center;">No procedures loaded.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ═══ REQUEST INFO + ACCOMMODATION ═══ -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+        <div class="section-label" style="margin-bottom:0;flex:1;">Request Info &amp; Accommodation</div>
+        <button class="btn btn-ghost btn-sm" id="btnBillingEdit" data-onclick="toggleBillingEdit()" style="gap:6px;font-size:12px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;stroke:currentColor;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Edit
+        </button>
+      </div>
+
+      <!-- Read-only view -->
+      <div id="billingInfoReadOnly">
+        <div class="form-grid" style="margin-bottom:14px;">
+          <div class="field"><label>Contract</label><div class="readonly-field" id="roContractName">—</div></div>
+          <div class="field"><label>Specialty</label><div class="readonly-field" id="roSpecialtyName">—</div></div>
+          <div class="field"><label>Accommodation Type</label><div class="readonly-field" id="roAccomTypeName">—</div></div>
+          <div class="field"><label>No. of Days</label><div class="readonly-field" id="roAccomDays">0</div></div>
+          <div class="field"><label>Extra Doctor Fee (EGP)</label><div class="readonly-field" id="roDoctorFee">—</div></div>
+        </div>
+      </div>
+
+      <!-- Editable fields (hidden by default) -->
+      <div id="billingInfoEdit" style="display:none;">
+        <div class="form-grid" style="margin-bottom:14px;">
+          <div class="field" id="fieldBillingContract">
+            <label>Contract</label>
+            <div class="patient-search-wrap" id="billingContractSearchWrap">
+              <div class="patient-search-input-row">
+                <svg class="patient-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" id="billingContractSearchInput" class="patient-search-field"
+                  placeholder="Search contract..." autocomplete="off"
+                  data-oninput="onBillingContractSearch(this.value)" data-onfocus="showBillingContractDropdown()">
+                <button class="patient-clear-btn" id="billingContractClearBtn" data-onclick="clearBillingContract()" style="display:none;" title="Clear">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+              </div>
+              <div class="patient-dropdown" id="billingContractDropdown" style="display:none;"></div>
+            </div>
+            <input type="hidden" id="fBillingContract" value="">
+          </div>
+          <div class="field" id="fieldBillingSpecialty">
+            <label>Specialty</label>
+            <div class="sdrop-wrap" id="billingSpecialtyWrap">
+              <div class="sdrop-input-row">
+                <svg class="sdrop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" class="sdrop-field" id="billingSpecialtySearch" placeholder="Search specialty..." autocomplete="off"
+                  data-oninput="onSDropSearch('billingSpecialty')" data-onfocus="onSDropFocus('billingSpecialty')">
+                <button class="sdrop-clear" id="billingSpecialtyClear" data-onclick="clearSDropField('billingSpecialty')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+              </div>
+              <div class="sdrop-dropdown" id="billingSpecialtyDropdown"></div>
+            </div>
+            <input type="hidden" id="fBillingSpecialty" value="">
+          </div>
+          <div class="field" id="fieldBillingAccomType">
+            <label>Accommodation Type <span class="req">*</span></label>
+            <select id="fBillingAccomType"><option value="">— Select Type —</option></select>
+            <span class="validation-msg">Please select accommodation type.</span>
+          </div>
+          <div class="field">
+            <label>No. of Days <span class="opt">(optional)</span></label>
+            <input type="number" id="fBillingAccomDays" min="0" max="365" placeholder="0">
+          </div>
+          <div class="field">
+            <label>Extra Doctor Fee (EGP) <span class="opt">(optional)</span></label>
+            <input type="number" id="fBillingDoctorFee" min="0" step="any" placeholder="0.00">
+          </div>
+        </div>
+      </div>
+
+<!-- ═══ BILLING EXTRA FEES & REMARKS ═══ -->
+      <div class="section-label">Additional Charges &amp; Remarks</div>
+      <div class="field" id="fieldBillingExtraFees" style="margin-bottom:18px;">
+        <label>Billing Extra Fees <span class="opt">(optional)</span></label>
+        <div style="position:relative;">
+          <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:13px;font-weight:600;pointer-events:none;">EGP</span>
+          <input type="number" id="fBillingExtraFees" min="0" step="any" placeholder="0.00"
+            style="padding-left:46px;"
+            data-oninput="onBillingExtraFeesChange()">
+        </div>
+        <span class="validation-msg">Please enter a valid amount.</span>
+      </div>
+      <div class="field" id="fieldBillingRemarks" style="margin-bottom:18px;">
+        <label id="lblBillingRemarks">Remarks <span class="opt" id="lblRemarksOpt">(optional)</span><span class="req" id="lblRemarksReq" style="display:none;">*</span></label>
+        <textarea id="fBillingRemarks" placeholder="Add any billing notes or remarks..." style="min-height:80px;" maxlength="1000"></textarea>
+        <span class="validation-msg">Remarks are required when Billing Extra Fees are entered.</span>
+      </div>
+
+      <div class="divider"></div>
+      <div style="display:flex;justify-content:space-between;margin-top:8px;">
+        <button class="btn btn-ghost" data-onclick="goTabPrev()">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          Back
+        </button>
+        <button class="btn btn-brand" id="btnCompleteBillingReview" data-onclick="completeBillingReview()">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          Next: Cost &amp; Pricing
+          <div class="spinner" id="billingReviewSpinner"></div>
+        </button>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════
+         TAB 4 — Cost & Pricing
+    ════════════════════════════════ -->
+    <div class="tab-panel" id="tabPanel4">
+      <!-- Audit Banner -->
+      <div id="auditBanner4" style="display:none;"></div>
+
+      <div class="section-label">Fetch Costs from DotCare</div>
+      <div id="costFetchAlert" class="alert alert-info">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span>Click <strong>Fetch Costs</strong> to retrieve procedure pricing from DotCare via Stored Procedure.</span>
+      </div>
+      <div style="margin-bottom:20px;">
+        <button class="btn btn-outline-brand" id="btnFetch" data-onclick="fetchCosts()">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"/></svg>
+          Fetch Costs from DotCare
+          <div class="spinner" id="fetchSpinner"></div>
+        </button>
+      </div>
+
+      <div id="costBreakdownContainer" style="display:none;">
+        <div class="section-label">Procedure-Level Cost Breakdown</div>
+        <div class="table-scroll">
+        <table class="cost-table">
+          <thead>
+            <tr><th>Procedure</th><th>Class</th><th>Role</th><th>Cost Element</th><th style="text-align:right;">Amount (EGP)</th></tr>
+          </thead>
+          <tbody id="costBreakdownBody"></tbody>
+          <tfoot>
+            <tr>
+              <td colspan="4" style="font-family:var(--mono);font-size:11px;color:var(--text2);">Base Costs Total</td>
+              <td class="cost-val" id="baseCostTotal">0.00</td>
+            </tr>
+          </tfoot>
+        </table>
+        </div>
+
+        <!-- ── Pricing Breakdown ── -->
+        <div class="section-label" style="margin-top:28px;">Pricing Breakdown</div>
+
+        <div class="breakdown-bar">
+          <div class="breakdown-bar-header">
+            <span class="breakdown-bar-title">Cost Components</span>
+          </div>
+
+          <!-- Base Costs -->
+          <div class="breakdown-row">
+            <div class="breakdown-icon" style="background:var(--brand-light);">
+              <svg viewBox="0 0 24 24" style="stroke:var(--brand-dark);"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            </div>
+            <div class="breakdown-info">
+              <div class="breakdown-name">Base Costs</div>
+              <div class="breakdown-desc">Retrieved from DotCare Stored Procedure</div>
+              <div class="breakdown-track"><div class="breakdown-fill" id="barBase" style="width:0%"></div></div>
+            </div>
+            <div class="breakdown-amount"><span>EGP </span><span id="sumBase">0.00</span></div>
+          </div>
+
+          <!-- Service Fees -->
+          <div class="breakdown-row">
+            <div class="breakdown-icon" style="background:var(--blue-bg);">
+              <svg viewBox="0 0 24 24" style="stroke:var(--blue);"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            </div>
+            <div class="breakdown-info">
+              <div class="breakdown-name">Service Fees <span style="font-size:10px;color:var(--text3);font-weight:500;">(15% of Base)</span></div>
+              <div class="breakdown-desc">Applied on base costs total</div>
+              <div class="breakdown-track"><div class="breakdown-fill" id="barService" style="width:0%;background:linear-gradient(90deg,#93c5fd,var(--blue));"></div></div>
+            </div>
+            <div class="breakdown-amount"><span>EGP </span><span id="sumService">0.00</span></div>
+          </div>
+
+          <!-- Meds & Supplies -->
+          <div class="breakdown-row">
+            <div class="breakdown-icon" style="background:var(--green-bg);">
+              <svg viewBox="0 0 24 24" style="stroke:var(--green);"><path d="M10.5 20H4a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H20a2 2 0 0 1 2 2v3"/><circle cx="18" cy="18" r="3"/><path d="M18 15v3l2 1"/></svg>
+            </div>
+            <div class="breakdown-info">
+              <div class="breakdown-name">Meds & Supplies</div>
+              <div class="breakdown-desc">Fixed per procedure classification</div>
+              <div class="breakdown-track"><div class="breakdown-fill" id="barMeds" style="width:0%;background:linear-gradient(90deg,#86efac,var(--green));"></div></div>
+            </div>
+            <div class="breakdown-amount"><span>EGP </span><span id="sumMeds">0.00</span></div>
+          </div>
+
+          <!-- Consumables -->
+          <div class="breakdown-row">
+            <div class="breakdown-icon" style="background:var(--amber-bg);">
+              <svg viewBox="0 0 24 24" style="stroke:var(--amber);"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            </div>
+            <div class="breakdown-info">
+              <div class="breakdown-name">External Consumables <span style="font-size:10px;color:var(--text3);font-weight:500;">(+20% markup)</span></div>
+              <div class="breakdown-desc">Supply Chain pricing incl. markup</div>
+              <div class="breakdown-track"><div class="breakdown-fill" id="barCons" style="width:0%;background:linear-gradient(90deg,#fcd34d,var(--amber));"></div></div>
+            </div>
+            <div class="breakdown-amount"><span>EGP </span><span id="sumConsumables">0.00</span></div>
+          </div>
+
+          <!-- Doctor Fee -->
+          <div class="breakdown-row">
+            <div class="breakdown-icon" style="background:var(--purple-bg);">
+              <svg viewBox="0 0 24 24" style="stroke:var(--purple);"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
+            <div class="breakdown-info">
+              <div class="breakdown-name">Extra Doctor Fee</div>
+              <div class="breakdown-desc">As entered by OR Coordinator</div>
+              <div class="breakdown-track"><div class="breakdown-fill" id="barDoctor" style="width:0%;background:linear-gradient(90deg,#c4b5fd,var(--purple));"></div></div>
+            </div>
+            <div class="breakdown-amount"><span>EGP </span><span id="sumDoctor">0.00</span></div>
+          </div>
+
+          <!-- Billing Extra Fees -->
+          <div class="breakdown-row" id="rowBillingExtra" style="display:none;">
+            <div class="breakdown-icon" style="background:#fce7f3;">
+              <svg viewBox="0 0 24 24" style="stroke:#ec4899;"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            </div>
+            <div class="breakdown-info">
+              <div class="breakdown-name">Billing Extra Fees</div>
+              <div class="breakdown-desc">Additional charges added by Billing Team</div>
+              <div class="breakdown-track"><div class="breakdown-fill" id="barBillingExtra" style="width:0%;background:linear-gradient(90deg,#fbcfe8,#ec4899);"></div></div>
+            </div>
+            <div class="breakdown-amount"><span>EGP </span><span id="sumBillingExtra">0.00</span></div>
+          </div>
+        </div>
+
+        <!-- Final Total -->
+        <div class="final-box">
+          <div style="position:relative;z-index:1;">
+            <div class="final-label">Total Estimate</div>
+            <div class="final-sub" id="finalBreakdown" style="color:rgba(255,255,255,.55);margin-top:6px;">Pending calculation</div>
+          </div>
+          <div style="position:relative;z-index:1;text-align:right;">
+            <div class="final-value"><span class="final-currency">EGP </span><span id="finalEstimate">0.00</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+      <div style="display:flex;justify-content:space-between;margin-top:8px;">
+        <button class="btn btn-ghost" data-onclick="goTab(3)">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          Back
+        </button>
+        <button class="btn btn-brand" id="btnSubmitToApproval" data-onclick="submitToApproval()" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          Submit for Approval
+          <div class="spinner" id="submitSpinner"></div>
+        </button>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════
+         TAB 5 — Approval
+    ════════════════════════════════ -->
+    <div class="tab-panel" id="tabPanel5">
+      <div id="approvalPending" class="alert alert-warn">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span>This tab unlocks after Cost & Pricing is submitted for approval.</span>
+      </div>
+
+      <div id="approvalReady" style="display:none;">
+        <!-- Audit Banner -->
+        <div id="auditBanner5" style="display:none;"></div>
+
+        <div class="section-label">Estimate to Review</div>
+        <div class="final-box" style="margin-bottom:24px;">
+          <div>
+            <div class="final-label">Final Estimate to Approve</div>
+            <div class="final-sub" id="approvalBreakdown">—</div>
+          </div>
+          <div class="final-value"><span class="final-currency">EGP </span><span id="approvalFinalVal">0.00</span></div>
+        </div>
+
+        <div class="section-label">Billing Team Decision</div>
+        <div id="approvalDecisionArea">
+        <div class="field" style="margin-bottom:16px;">
+          <label>Review Comments <span class="opt">(optional)</span></label>
+          <textarea id="fComments" placeholder="Add any review notes..."></textarea>
+        </div>
+
+        <div class="approval-grid">
+          <div class="approval-card" style="border-color:var(--green-bdr);">
+            <h3 style="color:var(--green);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Approve Estimate
+            </h3>
+            <p>Confirm the estimate is accurate and ready to communicate to the patient.</p>
+            <button class="btn btn-success" style="width:100%;" data-onclick="approveRequest()">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Confirm Approval
+            </button>
+          </div>
+          <div class="approval-card" style="border-color:var(--red-bdr);">
+            <h3 style="color:var(--red);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              Reject Estimate
+            </h3>
+            <p>Return the request for correction. A rejection reason is mandatory.</p>
+            <button class="btn btn-danger" style="width:100%;" data-onclick="toggleRejectForm()">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              Reject & Return
+            </button>
+          </div>
+        </div>
+
+        <div id="rejectForm" style="display:none;margin-top:16px;">
+          <div class="alert alert-danger">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <span>Rejection reason and suggested price are mandatory and will be shared with the OR Coordinator.</span>
+          </div>
+          <div class="form-grid" style="margin-bottom:12px;">
+            <div class="field" id="fieldRejReason">
+              <label>Rejection Reason <span class="req">*</span></label>
+              <textarea id="fRejectionReason" placeholder="Explain why this estimate is being rejected..." maxlength="500"></textarea>
+              <span class="validation-msg">Rejection reason is required.</span>
+            </div>
+            <div class="field" id="fieldSuggestedPrice">
+              <label>Suggested Price (EGP) <span class="req">*</span></label>
+              <input type="number" id="fSuggestedPrice" min="0" step="any" placeholder="0.00">
+              <span class="validation-msg">Suggested price is required.</span>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-danger" data-onclick="confirmReject()">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Confirm Rejection
+            </button>
+            <button class="btn btn-ghost" data-onclick="toggleRejectForm()">Cancel</button>
+          </div>
+        </div>
+        </div><!-- /approvalDecisionArea -->
+      </div>
+    </div>
+
+  </div><!-- /tabs-body -->
+</main>
+
+<!-- FOOTER -->
+<footer class="footer-bar">
+  <div class="footer-info" id="footerInfo">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    Complete all required fields to proceed.
+  </div>
+  <div class="footer-actions">
+
+  </div>
+</footer>
+
+</div><!-- /formView -->
+
+</div>
+
+<!-- ══ FILE PREVIEW MODAL ══ -->
+<div id="filePreviewModal" class="file-modal-overlay" style="display:none;" data-onclick="closeFilePreview(event)">
+  <div class="file-modal" data-onclick="event.stopPropagation()">
+    <div class="file-modal-header">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;stroke:var(--brand);flex-shrink:0;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <span class="file-modal-title" id="fileModalTitle">Document Preview</span>
+      <button class="file-modal-close" data-onclick="closeFilePreview()">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="file-modal-body" id="fileModalBody">
+      <div class="file-modal-loading">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/></svg>
+        Loading file...
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PROCESSING OVERLAY ══ -->
+<div class="processing-overlay" id="processingOverlay">
+  <div class="processing-card">
+    <div class="processing-spinner"></div>
+    <div class="processing-title" id="processingTitle">Processing...</div>
+    <div class="processing-sub"  id="processingSub">Please wait</div>
+  </div>
+</div>
+
+<script type="module" src="/src/main.ts"></script>
+</body>
+</html>
