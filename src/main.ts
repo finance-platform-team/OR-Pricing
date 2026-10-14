@@ -9,12 +9,14 @@ import '@fontsource/dm-mono/400.css';
 import '@fontsource/dm-mono/500.css';
 import '@fontsource/instrument-serif/400.css';
 import '@fontsource/instrument-serif/400-italic.css';
-import './legacy/orPricing.css';
+import './styles/app.css';
 
-import { applyLaunchParams } from './dataverse';
-import { installHandlerBridge } from './handlerBridge';
-import { HANDLERS, start } from './legacy/orPricing.js';
+import { installGlobalListeners, start } from './app';
+import { applyLaunchParams } from './data/dataverse';
+import { HANDLERS } from './handlers';
+import { installHandlerBridge } from './ui/handlerBridge';
 
+installGlobalListeners();
 installHandlerBridge(HANDLERS);
 await applyLaunchParams();
 start();

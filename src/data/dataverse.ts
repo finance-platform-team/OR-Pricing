@@ -12,17 +12,18 @@
  * `pa app add data-source --connector shared_commondataserviceforapps`), which
  * take the target environment URL on each call.
  *
- * The exported functions keep the exact signatures the legacy code used
- * (dvGet / dvPost / dvPatch / dvDelete ...) so the business logic is unchanged.
+ * The exported functions keep the Web API shapes the original web resource
+ * used (dvGet / dvPost / dvPatch / dvDelete ...), so OData query strings carry over as-is.
  */
 import { getContext } from '@microsoft/power-apps/app';
-import { MicrosoftDataverseService as DV } from './generated/services/MicrosoftDataverseService';
+import { MicrosoftDataverseService as DV } from '../generated/services/MicrosoftDataverseService';
 
 /** Environment that holds the oprx_* tables. Must be the full https URL. */
 export const DATA_ORG_URL = 'https://org319b4ea9.crm4.dynamics.com';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
+export type ODataList<T> = { value: T[] };
 type Result<T> = { success: boolean; data: T; error?: { message?: string } | unknown };
 
 const ACCEPT = 'application/json';
@@ -87,9 +88,9 @@ function skipTokenFrom(nextLink: string | undefined): string | undefined {
  *   "oprx_contracts?$select=a,b&$filter=...&$orderby=x asc&$top=10&$expand=createdby($select=fullname)"
  *   "oprx_pricingrequests(<id>)?$select=..."
  * Returns { value: [...] } for collections and the row itself for single records,
- * exactly like the Web API did.
+ * exactly like the Web API did. `T` is the caller's view of that payload.
  */
-export async function dvGet(ep: string): Promise<any> {
+export async function dvGet<T = any>(ep: string): Promise<T> {
   const m = ep.trim().match(/^(\w+)(?:\(([^)]+)\))?(?:\?(.*))?$/s);
   if (!m) throw new Error(`Unsupported Dataverse query: ${ep}`);
   const [, set, id, query = ''] = m;
@@ -108,7 +109,7 @@ export async function dvGet(ep: string): Promise<any> {
         PREFER_READ, ACCEPT, DATA_ORG_URL, set, cleanId(id), undefined, undefined, select, expand,
       ),
       `GET ${set}(${id})`,
-    );
+    ) as T;
   }
 
   // $top means "this is all I want" — Dataverse then returns no nextLink.
@@ -128,7 +129,17 @@ export async function dvGet(ep: string): Promise<any> {
     rows.push(...((page.value as Row[]) ?? []));
     skiptoken = top ? undefined : skipTokenFrom(page['@odata.nextLink']);
   } while (skiptoken);
-  return { value: rows };
+  return { value: rows } as T;
+}
+
+/** GET a collection and return its rows. */
+export async function dvList<T>(ep: string): Promise<T[]> {
+  return (await dvGet<ODataList<T>>(ep)).value ?? [];
+}
+
+/** Value for a `<navProp>@odata.bind` key, e.g. odataRef('oprx_contracts', id) → "/oprx_contracts(id)". */
+export function odataRef(set: string, id: string): string {
+  return `/${set}(${id})`;
 }
 
 /** Creates a record and returns its id (like reading the OData-EntityId header). */
